@@ -19,7 +19,7 @@ npm install --ignore-scripts
 Copy [`examples/activersi.patch.yml`](examples/activersi.patch.yml), replace its absolute paths, and launch your existing profile with the overlay:
 
 ```bash
-dsh --profile headless --patch /absolute/path/to/activersi.patch.yml
+dsh --profile tui --patch /absolute/path/to/activersi.patch.yml
 ```
 
 The overlay loads the source entry directly. There is no published npm release yet. `coreRoot` points to the same checkout so the plugin and Python runtime use the same version. `python` can be the absolute path to a virtualenv's Python executable.
