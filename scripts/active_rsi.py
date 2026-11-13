@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
+import fcntl
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -47,6 +49,8 @@ def evaluate(root: Path, candidate: Path, report_path: Path) -> dict:
         raise GateError(f"Invalid evaluation report: {exc}") from exc
     if not isinstance(report, dict):
         raise GateError("Evaluation report must be an object")
+    if "status" in report and report["status"] != "completed":
+        raise GateError("Evaluation has not completed successfully")
     for key, data in (("baseline_sha256", baseline), ("candidate_sha256", proposed)):
         if report.get(key) != digest(data):
             raise GateError(f"Stale or mismatched {key}")
@@ -114,29 +118,33 @@ def atomic_write(path: Path, data: bytes) -> None:
 def audit(root: Path, event: dict) -> None:
     # No raw user utterances, documents, or profiles in the audit receipt.
     audit_dir = root / ".active-rsi"
-    audit_dir.mkdir(parents=True, exist_ok=True)
+    audit_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
     with (audit_dir / "events.jsonl").open("a", encoding="utf-8") as stream:
+        os.chmod(audit_dir / "events.jsonl", 0o600)
         stream.write(json.dumps(event, ensure_ascii=True, sort_keys=True) + "\n")
 
 
-def promote(root: Path, candidate: Path, report_path: Path, user_approved: bool) -> dict:
+def _promote(root: Path, candidate: Path, report_path: Path, user_approved: bool) -> dict:
     result = evaluate(root, candidate, report_path)
     if result["risk"] == "high" and not user_approved:
         raise GateError("High-risk changes require actual user approval (--user-approved)")
     old = read_harness(target(root))
     new = read_harness(candidate)
     revisions = root / ".active-rsi" / "revisions"
-    revisions.mkdir(parents=True, exist_ok=True)
+    revisions.mkdir(parents=True, exist_ok=True, mode=0o700)
     rev = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ") + "-" + digest(old)[:12] + ".md"
+    if digest(old) != result["baseline_sha256"] or digest(new) != result["candidate_sha256"]:
+        raise GateError("Harness changed during evaluation")
     rev_file = revisions / rev
     with rev_file.open("xb") as stream:
+        os.chmod(rev_file, 0o600)
         stream.write(old)
     atomic_write(target(root), new)
     audit(root, {"kind": "promote", "revision": rev, **result})
     return {**result, "revision": rev, "status": "promoted"}
 
 
-def rollback(root: Path, revision: str) -> dict:
+def _rollback(root: Path, revision: str) -> dict:
     if re.fullmatch(r"\d{8}T\d{12}Z-[0-9a-f]{12}\.md", revision) is None:
         raise GateError("Invalid revision ID")
     previous = read_harness(root / ".active-rsi" / "revisions" / revision)
@@ -146,6 +154,29 @@ def rollback(root: Path, revision: str) -> dict:
     result = {"status": "rolled_back", "revision": revision, "from_sha256": old_sha, "to_sha256": new_sha}
     audit(root, {"kind": "rollback", **result})
     return result
+
+
+@contextmanager
+def mutation_lock(root: Path):
+    directory = root / ".active-rsi"
+    directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+    with (directory / "mutation.lock").open("a") as stream:
+        os.chmod(directory / "mutation.lock", 0o600)
+        fcntl.flock(stream, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(stream, fcntl.LOCK_UN)
+
+
+def promote(root: Path, candidate: Path, report_path: Path, user_approved: bool) -> dict:
+    with mutation_lock(root):
+        return _promote(root, candidate, report_path, user_approved)
+
+
+def rollback(root: Path, revision: str) -> dict:
+    with mutation_lock(root):
+        return _rollback(root, revision)
 
 
 def inspect(root: Path) -> dict:

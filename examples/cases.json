@@ -1,0 +1,5 @@
+[
+  {"id": "compact-plan", "split": "heldout", "input": {"required_text": ["offer compact layout", "explicit priorities"]}},
+  {"id": "preserve-work", "split": "heldout", "input": {"required_text": ["Preserve the user's existing work"]}},
+  {"id": "verify-result", "split": "heldout", "input": {"required_text": ["verify the result"]}}
+]

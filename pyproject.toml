@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "activersi"
+version = "0.1.0"
+description = "Active requirement discovery and sleep-time improvement for personal agents"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = []
+
+[project.scripts]
+activersi = "activersi.runtime:main"
+
+[tool.setuptools.packages.find]
+include = ["activersi*"]

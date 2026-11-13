@@ -1,8 +1,8 @@
-# activeRSI evidence and evaluation protocol
+# Evaluation protocol
 
 ## Unit of improvement
 
-An adaptation has a **requirement hypothesis**, **discovery action**, **harness change**, and **independent evidence of user utility**. There is intentionally no general-purpose profile or recall service. A rule without a behavioral consequence is not an improvement.
+An adaptation has a **requirement hypothesis**, **discovery action**, **harness change**, and **independently measured user utility**. A rule without a behavioral consequence is not an improvement.
 
 ## Wake / sleep separation
 
@@ -14,7 +14,7 @@ An adaptation has a **requirement hypothesis**, **discovery action**, **harness 
 
 Record success on held-out user tasks, frequency of repeated corrections, number of questions/interruption burden, task cost, and unintended effects. For recursive improvement, evaluate learning speed on **new users** under matched budgets. Separate benefits of personalizing the current user from benefits of improving the adaptation algorithm itself.
 
-The promotion helper is a conservative deterministic gate on *externally measured* pass/fail reports. Its output is not an independent model-quality evaluation.
+The evaluator runs baseline and candidate with equal per-case budgets. The promotion helper checks the resulting report and binds it to exact harness hashes. Evaluator correctness remains the responsibility of the host: use task checks and actual outcomes, and keep the evaluator separate from the proposal generator.
 
 ## Result report JSON
 
@@ -41,3 +41,19 @@ The gate requires at least 3 distinct held-out cases, at least one gain, no regr
 Observed: User repeatedly rejects draft research emails as generic.
 
 Alternatives: (A) User wants paper-specific citations; (B) user wants shorter letters; (C) both, varying by recipient. Ask a single comparative question or offer two short drafts. Candidate harness change: require one independently checked paper connection and a short recipient-specific research proposal before sending any email. Holdout: unseen recipients and a case where no paper can be verified. Confirm the user still approves the new behavior. Promote only after independent testing, otherwise keep it as a proposal.
+
+## Evaluator command
+
+`scripts/evaluate.py` sends one JSON object per execution:
+
+```json
+{"harness":"full policy text", "case":{"id":"task-a", "split":"heldout", "input":{"task":"..."}}, "budget":{"timeout_seconds":60,"max_questions":1,"max_cost":1.0}}
+```
+
+The trusted evaluator returns:
+
+```json
+{"passed":true, "safety_violation":false, "questions":0, "cost":0.0}
+```
+
+Cost uses the evaluator's documented units consistently for both variants. Cases are a JSON list with unique IDs and at least three held-out entries. The runner records actual responses and elapsed times, rejects budget excess and increases in reported cost or questions, and clears promotable cases on failure. The subprocess timeout is enforced by the runner; question and cost accounting comes from the evaluator. For remote services, the evaluator must enforce spending limits before issuing calls. Evaluation tasks should use isolated environments to avoid repeating external side effects when comparing both variants.

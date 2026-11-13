@@ -79,6 +79,15 @@ class HarnessGateTests(unittest.TestCase):
         with self.assertRaisesRegex(ar.GateError, "Safety violation"):
             ar.evaluate(self.root, self.candidate, self.report)
 
+    def test_failed_report_cannot_promote_even_with_passing_cases(self):
+        self.write_report()
+        report = json.loads(self.report.read_text())
+        report["status"] = "failed"
+        self.report.write_text(json.dumps(report))
+        with self.assertRaisesRegex(ar.GateError, "not completed"):
+            ar.promote(self.root, self.candidate, self.report, False)
+        self.assertEqual(ar.target(self.root).read_text(), "Original policy\n")
+
     def test_invalid_rollback_path_rejected(self):
         with self.assertRaisesRegex(ar.GateError, "Invalid revision"):
             ar.rollback(self.root, "../../secrets")
