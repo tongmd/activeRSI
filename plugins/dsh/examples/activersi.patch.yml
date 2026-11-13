@@ -1,0 +1,9 @@
+# DSH 0.2.1-rc.5 patch-list overlay for a single-user profile.
+# Replace the three absolute paths with your installation paths.
+- insert:
+    - id: activersi
+      name: /absolute/path/to/activeRSI/plugins/dsh/index.mjs
+      config:
+        workspace: /absolute/path/to/private/activersi-workspace
+        coreRoot: /absolute/path/to/activeRSI
+        python: python3

@@ -6,3 +6,5 @@ __pycache__/
 build/
 dist/
 .workspace/
+node_modules
+*.tgz

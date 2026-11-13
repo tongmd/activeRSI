@@ -1,0 +1,18 @@
+{
+  "name": "@activersi/dsh-plugin",
+  "version": "0.1.0",
+  "description": "Active requirement discovery and sleep-time improvement for DeepSeek Harness",
+  "type": "module",
+  "main": "./index.mjs",
+  "exports": {".": "./index.mjs"},
+  "files": ["*.mjs", "host_bridge.py", "examples/", "README.md"],
+  "scripts": {"test": "node --test tests/*.test.mjs"},
+  "engines": {"node": ">=22.19.0"},
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.0.5",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-commands": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-system-prompt": "0.2.1-rc.5"
+  }
+}

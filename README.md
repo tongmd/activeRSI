@@ -21,6 +21,12 @@ flowchart LR
 
 The task policy controls how the agent works. The discovery policy controls which questions it asks and how it searches for useful improvements. Both travel in the versioned harness, so an accepted discovery-policy change affects the next cycle. A dream produces hypotheses and candidate behavior; waking interactions provide the user feedback.
 
+## DeepSeek Harness plugin
+
+Use activeRSI directly inside DeepSeek Harness with native tools, `/activersi` commands, and a live operational harness. Dreaming reuses the host's selected model: prepare a requirement-discovery context, generate a proposal, validate it, and ask the user a useful question. Evaluated promotions are loaded on the next turn.
+
+See [plugin setup and commands](plugins/dsh/README.md). The plugin targets DSH 0.2.1-rc.5 and ships with the source checkout.
+
 ## Quick start
 
 Python 3.10+ on Linux or macOS. The runtime uses the Python standard library.
